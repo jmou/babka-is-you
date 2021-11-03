@@ -1,0 +1,9 @@
+Runs locally on your computer. No servers or dependencies. Just open index.html
+
+Initially all scenes are uncommented which is the full game. To play around
+with a single scene, comment out all the sections below it except for
+POSTMATTER. Or just check out the branch actXsceneY.
+
+For best experience, use vim with foldmethod=marker.
+
+See the bottom of nodes.js for useful hotkeys (e.g., 'r' to restart).
