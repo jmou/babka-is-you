@@ -489,6 +489,139 @@ window.onload = function() {
 };
 
 // ACT3SCENE1 }}}
+// ACT3SCENE2 {{{
+
+class ComponentNoun {
+  constructor(noun) {
+    this.noun = noun;
+  }
+}
+
+class ComponentIs {}
+
+class ComponentVerb {
+  constructor(componentClass) {
+    this.componentClass = componentClass;
+  }
+}
+
+class ComponentSubject {
+  constructor(noun) {
+    this.noun = noun;
+  }
+}
+
+function addWord(r, c, asset, ...components) {
+  return addSprite(r, c, asset, new ComponentPush(), ...components);
+}
+
+function addNoun(r, c, noun) {
+  return addSprite(r, c, 'noun-' + noun,
+                   new ComponentPush(),
+                   new ComponentNoun(noun));
+}
+
+function addIs(r, c) {
+  return addSprite(r, c, 'is',
+                   new ComponentPush(),
+                   new ComponentIs());
+}
+
+function addVerb(r, c, verb) {
+  const capitalized = verb[0].toUpperCase() + verb.slice(1);
+  return addSprite(r, c, 'verb-' + verb,
+                   new ComponentPush(),
+                   new ComponentVerb(eval('Component' + capitalized)));
+}
+
+function addSubject(r, c, noun) {
+  return addSprite(r, c, noun, new ComponentSubject(noun));
+}
+
+class SystemBabaInput extends SystemGameInput {
+  constructor(world, canvas, hitcanvas) {
+    super(world, canvas, hitcanvas);
+    this.rules = [];
+    world.listen('scanout', this.attachDynamicComponents.bind(this));
+  }
+
+  attachDynamicComponents() {
+    // Clear all rules
+    for (const [entity, ] of this.world.queryComponent(ComponentSubject)) {
+      this.world.detach(entity, ComponentYou);
+      this.world.detach(entity, ComponentWin);
+      this.world.detach(entity, ComponentStop);
+      this.world.detach(entity, ComponentPush);
+      this.world.detach(entity, ComponentSink);
+    }
+    this.rules = [];
+
+    // Find active rules
+    for (const [entity, ] of this.world.queryComponent(ComponentIs)) {
+      const { x, y, width, height } = this.world.cast(entity, ComponentBounds);
+      // 10px of slop (pushing can jitter a mousemove delta).
+      for (const [[x1, y1], [x2, y2]] of [[[x-10, y + height/2], [x+width+9, y + height/2]],
+                                          [[x + width/2, y-10], [x + width/2, y+height+9]]]) {
+        const before = this.hit(x1, y1);
+        const after = this.hit(x2, y2);
+        const noun = this.world.cast(before, ComponentNoun);
+        const verb = this.world.cast(after, ComponentVerb);
+        if (noun && verb) {
+          this.rules.push([noun.noun, verb.componentClass]);
+        }
+      }
+    }
+
+    // Attach components (verbs) to entities (nouns)
+    let debugString = [];
+    for (const [wordNoun, componentClass] of this.rules) {
+      for (const [entity, { noun }] of this.world.queryComponent(ComponentSubject)) {
+        if (wordNoun == noun) {
+          this.world.attach(entity, new componentClass());
+        }
+      }
+      debugString.push(`${wordNoun} attached to ${componentClass.name}`);
+    }
+    document.getElementById('rules').innerHTML = debugString.join('<br>');
+  }
+}
+
+window.onload = function() {
+  const canvas = document.getElementById('game');
+  world = new World();
+  new SystemSpriteRender(world, canvas);
+  new SystemBabaInput(world, canvas, document.getElementById('hit'));
+
+  addSubject(2, 5, 'rock');
+  addSubject(2, 9, 'wall');
+  addSubject(6, 5, 'water');
+  addSubject(6, 9, 'flag');
+  addSubject(4, 7, 'baba');
+
+  addNoun(0, 0, 'baba');
+  addIs(0, 1);
+  addVerb(0, 2, 'you');
+
+  addNoun(3, 0, 'rock');
+  addIs(3, 1);
+  addVerb(3, 2, 'push');
+
+  addNoun(4, 0, 'wall');
+  addIs(4, 1);
+  addVerb(4, 2, 'stop');
+
+  addNoun(5, 0, 'water');
+  addIs(5, 1);
+  addVerb(5, 2, 'sink');
+
+  addNoun(6, 0, 'flag');
+  addIs(6, 1);
+  addVerb(6, 2, 'win');
+
+  world.listen('win', () => alert('dynamical!'));
+};
+
+// ACT3SCENE2 }}}
 // POSTMATTER {{{
 
 function rot13(s) {
