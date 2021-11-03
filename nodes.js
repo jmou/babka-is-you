@@ -222,6 +222,66 @@ class World extends ECS {
 }
 
 // INTERMISSION }}}
+// ACT2SCENE1 {{{
+
+class ComponentSprite {
+  constructor(img, scale = 1) {
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = img.width * scale;
+    this.canvas.height = img.height * scale;
+    const ctx = this.canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+  }
+}
+
+class SystemSpriteRender {
+  constructor(world, canvas) {
+    this.world = world;
+    this.ctx = canvas.getContext('2d');
+    this.dirty = false;
+
+    this.world.listen('recomposite', this.recomposite.bind(this));
+    this.recomposite();
+  }
+
+  recomposite() {
+    if (!this.dirty) {
+      this.dirty = true;
+      requestAnimationFrame(this.render.bind(this));
+    }
+  }
+
+  render() {
+    this.dirty = false;
+    const { width, height } = this.ctx.canvas;
+    this.ctx.clearRect(0, 0, width, height);
+    this.world.signal('vblank', { width, height });
+
+    for (const [entity, sprite] of this.world.queryComponent(ComponentSprite)) {
+      const { x, y } = this.world.cast(entity, ComponentBounds);
+      this.ctx.drawImage(sprite.canvas, x, y);
+      this.world.signal('blit', entity);
+    }
+
+    this.world.signal('scanout');
+  }
+}
+
+window.onload = function() {
+  world = new World();
+  const canvas = document.getElementById('game');
+  const render = new SystemSpriteRender(world, canvas);
+
+  let img = document.getElementById('flag');
+  world.addEntity(
+    new ComponentBounds(100, 100, 840, 800),
+    new ComponentSprite(img, 40),
+    new ComponentDrag(),
+  );
+};
+
+// ACT2SCENE1 }}}
 // POSTMATTER {{{
 
 function rot13(s) {
