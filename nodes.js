@@ -183,3 +183,98 @@ window.onload = function() {
 };
 
 // ACT1SCENE2 }}}
+// INTERMISSION {{{
+
+class World extends ECS {
+  constructor() {
+    super();
+    this.listeners = {};
+  }
+
+  listen(type, listener) {
+    (this.listeners[type] ||= []).push(listener);
+  }
+
+  signal(type, data) {
+    for (const listener of this.listeners[type] || []) {
+      listener(data);
+    }
+  }
+
+  detach(entity, componentClass) {
+    delete this.components[componentClass.name]?.[entity];
+  }
+
+  destroy(entity) {
+    for (const c of Object.values(this.components)) {
+      delete c[entity];
+    }
+  }
+
+  queryComponent(componentClass) {
+    const components = this.components[componentClass.name] || {};
+    return Object.entries(components);
+  }
+
+  cast(entity, componentClass) {
+    return this.components[componentClass.name]?.[entity];
+  }
+}
+
+// INTERMISSION }}}
+// POSTMATTER {{{
+
+function rot13(s) {
+  let r = [];
+  for (const c of s) {
+    r.push(c < 'a' ? c : String.fromCharCode((c.charCodeAt(0) - 97 + 13) % 26 + 97));
+  }
+  return r.join('');
+}
+
+function yourImage(src) {
+  const img = document.createElement('img');
+  img.src = src;
+  img.addEventListener('load', () => {
+    for (const entity in world.components.ComponentYou) {
+      world.attach(entity, new ComponentSprite(img));
+    }
+    world.signal('recomposite');
+  });
+}
+
+function babka() {
+  for (const [entity, subject] of world.queryComponent(ComponentSubject)) {
+    let standin;
+    switch (subject.noun) {
+      case 'baba': standin = 'babka'; break;
+      case 'rock': standin = 'scone'; break;
+      case 'wall': standin = 'tin'; break;
+      case 'water': standin = 'cup'; break;
+      case 'flag': standin = 'flour'; break;
+    }
+    const img = document.createElement('img');
+    img.src = standin + '.png';
+    img.addEventListener('load', () => {
+      world.attach(entity, new ComponentSprite(img));
+      world.signal('recomposite');
+    });
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+    return;
+  switch (e.key) {
+    case 'r': { loadLevel(false); break; }
+    case 'w': { loadLevel(true); break; }
+    case 's': { const x = alert; alert = console.log; loadLevel(true); alert = x; break; }
+    case 'h': { document.body.classList.toggle('hit'); break; }
+    case 'l': { document.body.classList.toggle('rules'); break; }
+    case 'b': { yourImage('babka.png'); break; }
+    case 'n': { loadLevel(false); babka(); break; }
+  }
+});
+
+// set fdm=marker foldtext=v:folddashes.substitute(getline(v:foldstart),'//\ ','','')
+// POSTMATTER }}}
