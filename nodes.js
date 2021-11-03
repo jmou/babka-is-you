@@ -282,6 +282,77 @@ window.onload = function() {
 };
 
 // ACT2SCENE1 }}}
+// ACT2SCENE2 {{{
+
+class SystemHitInput extends SystemInput {
+  constructor(world, canvas, hitcanvas) {
+    super(world, canvas);
+    this.hitcanvas = hitcanvas;
+    world.listen('vblank', this.vblank.bind(this));
+    world.listen('blit', this.blit.bind(this));
+    world.listen('scanout', this.scanout.bind(this));
+  }
+
+  vblank({ width, height }) {
+    this.hitcanvas.width = width;
+    this.hitcanvas.height = height;
+    this.hitctx = this.hitcanvas.getContext('2d', { alpha: false });
+    this.hitctx.clearRect(0, 0, width, height);
+    // Drawing must be pixel perfect (no antialiasing) for proper hit detection.
+  }
+
+  blit(entity) {
+    const { x, y, width, height } = this.world.cast(entity, ComponentBounds);
+    this.hitctx.fillStyle = this.swizzle(entity);
+    this.hitctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(width), Math.ceil(height));
+  }
+
+  scanout() {
+    this.hitmap = this.hitctx.getImageData(0, 0, this.hitcanvas.width, this.hitcanvas.height);
+  }
+
+  swizzle(entity) {
+    // Encode up to 24 bits in RGB color. Multiply for visually distinct colors.
+    const swizzled = (entity * 999331) % (1 << 24);
+    return '#' + (swizzled).toString(16).padStart(6, 0);
+  }
+
+  hit(x, y) {
+    const offset = (y * this.hitcanvas.width + x) * 4;
+    let swizzled = 0;
+    for (let i = 0; i < 3; i++ ) {
+      swizzled <<= 8;
+      swizzled += this.hitmap.data[offset + i];
+    }
+    if (!swizzled)
+      return undefined;
+    // Multiplicative inverse of swizzle() multiple.
+    return (swizzled * 8055819) % (1 << 24)
+  }
+
+  click(x, y, entity) {
+    if (entity) {
+      alert('Clicked ' + entity);
+    } else {
+      const img = document.getElementById('flag');
+      this.world.addEntity(
+        new ComponentBounds(x, y, 63, 60),
+        new ComponentSprite(img, 3),
+        new ComponentDrag(),
+      );
+      world.signal('recomposite');
+    }
+  }
+}
+
+window.onload = function() {
+  world = new World();
+  const canvas = document.getElementById('game');
+  const render = new SystemSpriteRender(world, canvas);
+  new SystemHitInput(world, canvas, document.getElementById('hit'));
+};
+
+// ACT2SCENE2 }}}
 // POSTMATTER {{{
 
 function rot13(s) {
