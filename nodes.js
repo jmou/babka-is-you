@@ -622,6 +622,134 @@ window.onload = function() {
 };
 
 // ACT3SCENE2 }}}
+// FINALE {{{
+
+// First letters map to objects, except wAter (A), stop (H for "halt"),
+// wiN (N), and sink (K for "kill").
+let levels = [
+  [
+    '                 ',
+    '   wwwwwwwwwwww  ',
+    '   w          w  ',
+    '   w    I     w  ',
+    '   w      N   w  ',
+    '   w  F f     w  ',
+    '   w          w  ',
+    '   wwwwwwwwwwww  ',
+    '     w        w  ',
+    '   B w  W     w  ',
+    '   I w  I  b  w  ',
+    '   Y w  H     w  ',
+    '     w        w  ',
+    '     wwwwwwwwww  ',
+    '                 ',
+  ],
+  [
+    'BWw              ',
+    'IIw  wwwwwwwww   ',
+    'YHw  w       w   ',
+    'www  w b   r w   ',
+    '    Aw       w   ',
+    '    Iw     r w   ',
+    '    Kw       w   ',
+    '  wwwwaaawwwwwww ',
+    '  w      w     w ',
+    '  w      w RIP w ',
+    '  waaa w       w ',
+    '  waaa   w FIN w ',
+    '  wfaa   w     w ',
+    '  wwwwwwwwwwwwww ',
+    '                 ',
+  ],
+  [
+    'RIH r    a       ',
+    '    r wwwawwwwww ',
+    'AIK r w  a w   w ',
+    '    r w  a   f w ',
+    'FIN r w  a w   w ',
+    '    r wb awwwwww ',
+    'rrrrr w  aaaaaaaa',
+    '      w    w     ',
+    '   wwww    w     ',
+    '   w       w  B  ',
+    '   w    WIHw  I  ',
+    '   w       w  Y  ',
+    '   wwwwwwwww  r  ',
+    '                 ',
+    '                 ',
+  ],
+  [
+    '                 ',
+    '                 ',
+    '                 ',
+    '                 ',
+    ' ww    w     w   ',
+    ' w w  w w   w w  ',
+    ' w w  w w   w w  ',
+    ' ww   www   www  ',
+    ' w w w   w w   w ',
+    ' w w w   w w   w ',
+    ' ww  w   w w   w ',
+    '                 ',
+    '                 ',
+    '                 ',
+    '                 ',
+  ],
+];
+
+let winText = [
+  'qngn cvcryvarf!',
+  'evyrl vf lbh!',
+  'onoxn vf lbh!',
+];
+
+function loadLevel(next) {
+  if (next) {
+    levels.shift();
+    alert(rot13(winText.shift()));
+  }
+
+  world = new World();
+  const canvas = document.getElementById('game');
+  new SystemSpriteRender(world, canvas);
+  new SystemBabaInput(world, canvas, document.getElementById('hit'));
+  world.listen('win', () => loadLevel(true));
+
+  let babaPos;
+  const level = levels[0];
+  for (let row = 0; row < level.length; row++) {
+    for (let col = 0; col < level[row].length; col++) {
+      switch (level[row][col]) {
+        case ' ': break;
+        case 'b': babaPos = [row, col]; break;
+        case 'r': addSubject(row, col, 'rock'); break;
+        case 'w': addSubject(row, col, 'wall'); break;
+        case 'a': addSubject(row, col, 'water'); break;
+        case 'f': addSubject(row, col, 'flag'); break;
+        case 'B': addNoun(row, col, 'baba'); break;
+        case 'R': addNoun(row, col, 'rock'); break;
+        case 'W': addNoun(row, col, 'wall'); break;
+        case 'A': addNoun(row, col, 'water'); break;
+        case 'F': addNoun(row, col, 'flag'); break;
+        case 'I': addIs(row, col); break;
+        case 'Y': addVerb(row, col, 'you'); break;
+        case 'P': addVerb(row, col, 'push'); break;
+        case 'H': addVerb(row, col, 'stop'); break;
+        case 'K': addVerb(row, col, 'sink'); break;
+        case 'N': addVerb(row, col, 'win'); break;
+      }
+    }
+  }
+  // Kludge to add baba last so he stacks on top.
+  if (babaPos)
+    addSubject(...babaPos, 'baba');
+}
+
+window.onload = function() {
+  loadLevel(false);
+}
+
+// FINALE }}}
 // POSTMATTER {{{
 
 function rot13(s) {
