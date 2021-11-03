@@ -353,6 +353,142 @@ window.onload = function() {
 };
 
 // ACT2SCENE2 }}}
+// ACT3SCENE1 {{{
+
+class ComponentYou {}
+class ComponentPush {}
+class ComponentStop {}
+class ComponentSink {}
+class ComponentWin {}
+
+ComponentBounds.prototype.overlaps = function(o) {
+  let dx;
+  let dy;
+
+  if (this.x <= o.x && o.x < this.x + this.width) {
+    dx = this.x + this.width - o.x;
+  }
+  if (this.x <= o.x + o.width && o.x + o.width < this.x + this.width) {
+    dx = dx ? 99 : this.x - o.x - o.width;
+  }
+
+  if (this.y <= o.y && o.y < this.y + this.height) {
+    dy = this.y + this.height - o.y;
+  }
+  if (this.y <= o.y + o.height && o.y + o.height < this.y + this.height) {
+    dy = dy ? 99 : this.y - o.y - o.height;
+  }
+
+  if (!dx || !dy) return null;
+  if (Math.abs(dx) < Math.abs(dy)) {
+    return [dx, 0];
+  } else {
+    return [0, dy];
+  }
+}
+
+class SystemGameInput extends SystemHitInput {
+  constructor(world, canvas, hitcanvas) {
+    super(world, canvas, hitcanvas);
+    this.won = false;
+  }
+
+  click(x, y, entity) { }
+
+  drag(dx, dy, entity) {
+    for (const [entity, ] of this.world.queryComponent(ComponentYou)) {
+      const bounds = this.world.cast(entity, ComponentBounds);
+      bounds.x += dx;
+      bounds.y += dy;
+      this.collide(entity);
+
+      for (const [collision, ] of this.world.queryComponent(ComponentWin)) {
+        if (this.world.cast(collision, ComponentBounds).overlaps(bounds)) {
+          this.mouseup(event);
+          this.world.signal('recomposite');
+          if (this.won) return;  // hacky debounce
+          this.won = true;
+          this.world.signal('win');
+          return;
+        }
+      }
+    }
+    this.world.signal('recomposite');
+  }
+
+  collide(entity) {
+    const bounds = this.world.cast(entity, ComponentBounds);
+    let adjust = [0, 0];
+
+    for (const [collision, ] of this.world.queryComponent(ComponentSink)) {
+      if (this.world.cast(collision, ComponentBounds).overlaps(bounds)) {
+        this.world.destroy(entity);
+        this.world.destroy(collision);
+        return adjust;
+      }
+    }
+
+    for (const [collision, ] of this.world.queryComponent(ComponentStop)) {
+      const overlap = this.world.cast(collision, ComponentBounds).overlaps(bounds);
+      if (overlap) {
+        adjust[0] += overlap[0];
+        adjust[1] += overlap[1];
+      }
+    }
+    bounds.x += adjust[0];
+    bounds.y += adjust[1];
+
+    for (const [collision, ] of this.world.queryComponent(ComponentPush)) {
+      if (collision == entity) continue;
+      const pushed = this.world.cast(collision, ComponentBounds);
+      const overlap = pushed.overlaps(bounds);
+      if (overlap) {
+        pushed.x -= overlap[0];
+        pushed.y -= overlap[1];
+        const resist = this.collide(collision);
+        bounds.x += resist[0];
+        bounds.y += resist[1];
+        adjust[0] += resist[0];
+        adjust[1] += resist[1];
+      }
+    }
+
+    return adjust;
+  }
+}
+
+function addSprite(r, c, asset, ...components) {
+  const scale = 3;
+  const x = c * 24 * scale;
+  const y = r * 24 * scale;
+
+  const img = document.getElementById(asset);
+  const entity = world.addEntity(
+    new ComponentBounds(x, y, scale * img.width, scale * img.height),
+    new ComponentSprite(img, scale),
+    ...components,
+  );
+
+  world.signal('recomposite');
+  return entity;
+}
+
+window.onload = function() {
+  const canvas = document.getElementById('game');
+  world = new World();
+  new SystemSpriteRender(world, canvas);
+  new SystemGameInput(world, canvas, document.getElementById('hit'));
+
+  addSprite(2, 5, 'rock', new ComponentPush());
+  addSprite(2, 9, 'wall', new ComponentStop());
+  addSprite(6, 5, 'water', new ComponentSink());
+  addSprite(6, 9, 'flag', new ComponentWin());
+  addSprite(4, 7, 'baba', new ComponentYou());
+
+  world.listen('win', () => alert('you win!'));
+};
+
+// ACT3SCENE1 }}}
 // POSTMATTER {{{
 
 function rot13(s) {
