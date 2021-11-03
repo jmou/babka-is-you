@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="nodes.js"></script>
+  <style>
+    html { height: 100%; }
+    body { margin: 0; padding: 0; height: 100%; background: black; text-align: center; }
+    #center { position: absolute; width: 100%; top: 50%; transform: translateY(-50%); }
+    canvas { image-rendering: pixelated; border: 0 solid #333; border-width: 0 1px; }
+    #hit, #rules { display: none; }
+    .hit #hit { display: inline; }
+    .rules #rules { display: inline-block; height: 10em; color: white; vertical-align: top; text-align: left; }
+    canvas { width: 408px; height: 360px; }  /* 1x */
+    @media (min-width: 816px) and (min-height: 720px) {
+      canvas { width: 816px; height: 720px; }  /* 2x */
+      .hit canvas { width: 408px; height: 360px; }  /* 1x */
+    }
+    @media (min-width: 1224px) and (min-height: 1080px) {
+      canvas { width: 1224px; height: 1080px; }  /* 3x */
+      .hit canvas { width: 816px; height: 720px; }  /* 2x */
+    }
+  </style>
+</head>
+<body>
+  <div id=center>
+    <canvas id=game width=1224 height=1080></canvas>
+    <canvas id=hit width=1224 height=1080></canvas>
+    <div id=rules></div>
+    <div style="display: none">
+      <img id=baba src=baba.png>
+      <img id=flag src=flag.png>
+      <img id=is src=is.png>
+      <img id=noun-baba src=noun-baba.png>
+      <img id=noun-flag src=noun-flag.png>
+      <img id=noun-rock src=noun-rock.png>
+      <img id=noun-wall src=noun-wall.png>
+      <img id=noun-water src=noun-water.png>
+      <img id=rock src=rock.png>
+      <img id=verb-push src=verb-push.png>
+      <img id=verb-sink src=verb-sink.png>
+      <img id=verb-stop src=verb-stop.png>
+      <img id=verb-win src=verb-win.png>
+      <img id=verb-you src=verb-you.png>
+      <img id=wall src=wall.png>
+      <img id=water src=water.png>
+    </div>
+  </div>
+</body>
+</html>
